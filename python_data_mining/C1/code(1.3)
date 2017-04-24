@@ -1,37 +1,142 @@
-#支持度和置信度
+# coding: utf-8  
 import numpy as np
+dataset_filename="affinity_dataset.txt"
+#加载数据文件
+dataset=np.loadtxt(dataset_filename)
+'''
+数据结果:
+array([[ 0.,  0.,  1.,  1.,  1.],
+       [ 1.,  1.,  0.,  1.,  0.]
+       ])
+       '''
+#一行表示一个用户对五个商品的购买情况,1表示买了，0表示没买
+n_samples,n_features=dataset.shape
+print("{0} samples in total with {1} features".format(n_samples,n_features))
+
+#定义特征名集合
+features=["bread","milk","cheese","apple","banana"]
+
+#目标一 ， 找出以下规则:要找出用户购买了apple, 那他也可能购买banana
+# 前提：计算规则的支持度和置信度
+#支持度:数据集中规则应验的次数.
+#置信度: 符合给定条件的所有规则里，跟当前规则结论一致的比例有多少. 
+
+#首先, 有多少行有这条规则的前提条件
+num_apple_purchases=0
+for sample in dataset:
+    if sample[3]==1:
+        num_apple_purchases+=1
+print("{0} people bought apples".format(num_apple_purchases))
+
+#下面可以计算这条规则的应验数和无效数
+rule_valid=0.0
+rule_invalid=0
+for sample in dataset:
+    if sample[3]==1:
+        if sample[4]==1:
+            rule_valid+=1
+        else:
+            rule_invalid+=1
+print("{0} cases of the rule being valid".format(rule_valid))
+print("{0} cases of the rule being invalid".format(rule_invalid))
+
+#支持度
+support=rule_valid
+#置信度
+confidence=rule_valid/num_apple_purchases
+print("the support is {0} and the confidence is {1:.3f}".format(support, confidence))
+
+
+################################################################
+#有了上面的案例，用于理解支持度和置信度
+#下面开始所有的规则的支持度和置信度的计算
+
 from collections import defaultdict
-def print_rule(premise, conclusion,support, confidence, features):
-    premise_name = features[premise]
-    conclusion_name = features[conclusion]
-    print("Rule: If a person buys {0} they will also buy{1}".format(premise_name, conclusion_name))
-    print(" - Support: {0}".format(support[(premise,conclusion)]))
-    print(" - Confidence: {0:.3f}".format(confidence[(premise,conclusion)]))
-dataset_filename = "affinity_dataset.txt"
-X = np.loadtxt(dataset_filename)
-#print(X[:5])
-valid_rules = defaultdict(int)
-invalid_rules = defaultdict(int)
-num_occurances = defaultdict(int)
-features = defaultdict(int)
-for sample in X:
-  for premise in range(4):
-    if sample[premise] == 0: 
-        continue
-    num_occurances[premise] += 1
-    for conclusion in range(4):
-        if premise == conclusion: 
-            continue
-        if sample[conclusion] == 1:
-            valid_rules[(premise, conclusion)] += 1
-        else :
-            invalid_rules[(premise, conclusion)] += 1
+#数据格式采用字典：{ 键(前提,结论), 值(数值)}
+valid_rules=defaultdict(int)    #每条规则的支持度
+invalid_rules=defaultdict(int)  #每条规则的无效数
+#数据格式采用字典：{ 键(前提), 值(数值)}
+num_rule_occurances=defaultdict(float)   #规则条件出现的次数
+
+for sample in dataset:
+    # premise 前提条件
+    for premise in range(n_features):    
+        if sample[premise] ==0: continue    #这个商品没有购买，则表示这个前提不成立,跳过循环
+        num_rule_occurances[premise]+=1.0     #出现了一次前提条件
+        for conclusion in range(n_features):   #计算它的支持度和无效数
+            if premise==conclusion:
+                continue
+            if sample[conclusion]==1:
+                valid_rules[(premise,conclusion)]+=1
+            else:
+                invalid_rules[(premise,conclusion)]+=1
+                              
 support=valid_rules
-confidence = defaultdict(float)
-for premise, conclusion in valid_rules.keys():
-    rule = (premise, conclusion)
-    confidence[rule] = valid_rules[rule] / num_occurances[premise]
-features = {1: '苹果', 3: '香蕉'};
-premise = 1
-conclusion = 3
-print_rule(premise, conclusion,support, confidence, features)
+confidence=defaultdict(float)
+for premise,conclusion in valid_rules.keys():
+    confidence[(premise,conclusion)]=valid_rules[(premise,conclusion)]/num_rule_occurances[premise]
+#下面将结果输出一下
+for premise, conclusion in confidence:
+    #求出规则前提条件商品名
+    premise_name=features[premise]
+    #求出规则条件的结论对应的商品名
+    conclusion_name=features[conclusion]
+    print("Rule: if a person buys {0} they will also buy {1}".format(premise_name,conclusion_name))
+    print(" this rule's support is :{0}".format( support[(premise,conclusion)]     )  )
+    print(" this rule's confidence is :{0}".format( confidence[(premise,conclusion)]     )  )
+    print("")
+    
+
+'''
+  将输出部分定义成一个函数
+  premise: 前提 的索引
+  conclusion: 结论的索引
+  support: 支持度字典
+  confidence: 置信度字典
+  features: 特征数组
+'''
+def print_rule( premise,conclusion,support,confidence,features):
+     #求出规则前提条件商品名
+    premise_name=features[premise]
+    #求出规则条件的结论对应的商品名
+    conclusion_name=features[conclusion]
+    print("Rule: if a person buys {0} they will also buy {1}".format(premise_name,conclusion_name))
+    print(" this rule's support is :{0}".format( support[(premise,conclusion)]     )  )
+    print(" this rule's confidence is :{0}".format( confidence[(premise,conclusion)]     )  )
+    print("")
+    
+#调用上面的函数，输出计算好的规则的支持度和置信度,比如，买了milk后又买apple的支持度和置信度
+premise=1
+conclusion=3
+print_rule(premise,conclusion,support,confidence,features)
+
+###################################################################################
+'''
+  下面对支持度进行排序
+'''
+#先排序输出
+from pprint import pprint
+pprint(list(support.items()))
+#排好序后存到字典中
+from operator import itemgetter
+#                根据支持度的值排序 
+sorted_support=sorted(support.items(), key=itemgetter(1),reverse=True)
+#输出前三名
+for index in range(5):
+    print("Rule #{0}".format(index+1))
+    (premise,conclusion)=sorted_support[index][0]   #取出键
+    print_rule( premise, conclusion, support,confidence,features)
+'''
+  下面对信任度进行排序
+'''
+#先排序输出
+pprint(list(confidence.items()))
+#排好序后存到字典中
+#                根据信任度的值排序 
+sorted_confidence=sorted(confidence.items(), key=itemgetter(1),reverse=True)
+#输出前三名
+for index in range(5):
+    print("Rule #{0}".format(index+1))
+    (premise,conclusion)=sorted_confidence[index][0]   #取出键
+    print_rule( premise, conclusion, support,confidence,features)
+
