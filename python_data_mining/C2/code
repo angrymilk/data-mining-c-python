@@ -1,0 +1,34 @@
+import numpy as np
+import csv
+import os
+data_folder=r'C:\Users\zun\.spyder-py3'
+data_filename=os.path.join(data_folder,"ionosphere.data.csv")
+print(data_filename)
+X=np.zeros((351,34),dtype=float)
+Y=np.zeros((351,),dtype=bool)
+with open(data_filename, 'rt') as input_file:
+    reader = csv.reader(input_file)
+    for i, row in enumerate(reader):
+       data = [float(datum) for datum in row[:-1]]
+       X[i] = data
+       Y[i] = row[-1] == 'g'
+from sklearn.cross_validation import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X, Y, random_state=2000)
+from sklearn.neighbors import KNeighborsClassifier
+estimator = KNeighborsClassifier()
+estimator.fit(X_train, y_train)
+y_predicted = estimator.predict(X_test)
+accuracy = np.mean(y_test == y_predicted) * 100
+print("The accuracy is {0:.1f}%".format(accuracy))
+from sklearn.cross_validation import cross_val_score
+avg_scores = []
+all_scores = []
+parameter_values = list(range(1, 4)) # Include 20
+for n_neighbors in parameter_values:
+    estimator = KNeighborsClassifier(n_neighbors=n_neighbors)
+    scores = cross_val_score(estimator, X, Y, scoring='accuracy')
+    avg_scores.append(np.mean(scores))
+    all_scores.append(scores)
+#matplotlib inline
+from matplotlib import pyplot as plt 
+plt.plot(parameter_values,avg_scores, '-o')
