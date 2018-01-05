@@ -41,3 +41,24 @@ newRowx[2]=0
 
 predictedy=clf.predict([newRowx])      #这里与python2版本有较大差别
 print("zunzun:",str(predictedy))
+
+
+
+
+数据集：
+RID 	AGE 	income 	student	rating 	if_buy
+1	y	h	n	f	n
+2	y	h	n	e	n
+3	m	h	n	f	y
+4	s	m	n	f	y
+5	s	l	y	f	y
+6	s	l	y	e	n
+7	m	l	y	e	y
+8	y	m	n	f	n
+9	y	l	y	f	y
+10	s	m	y	f	y
+11	y	m	y	e	y
+12	m	m	n	e	y
+13	m	h	y	f	y
+14	s	m	n	e	n
+
