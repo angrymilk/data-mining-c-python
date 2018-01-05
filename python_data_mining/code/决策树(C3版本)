@@ -1,0 +1,43 @@
+from sklearn.feature_extraction import DictVectorizer
+import csv
+from sklearn import preprocessing
+from sklearn import tree
+from sklearn.externals.six import StringIO
+DataFrom=open(r'd:\\inn.csv','rt');
+reader=csv.reader(DataFrom)
+header=next(reader)
+print(header)
+#数据预处理，存入字典矩阵中
+featureList=[]
+LabelList=[]
+
+for row in reader:
+    LabelList.append(row[len(row)-1])
+    rowDict={}
+    for i in range(1,len(row)-1):        
+        rowDict[header[i]]=row[i]
+    featureList.append(rowDict)
+print(featureList)
+#根据数据矩阵进行决策树的构建
+vec=DictVectorizer()
+dumx=vec.fit_transform(featureList).toarray()
+print("jhsadfkjh :",str(dumx))
+print(vec.get_feature_names())
+
+print("dshafk  "+str(LabelList))
+ 
+lb=preprocessing.LabelBinarizer()
+dumy=lb.fit_transform(LabelList)
+print("chenzun  ",str(dumy))
+
+clf=tree.DecisionTreeClassifier(criterion='entropy')
+clf=clf.fit(dumx,dumy)
+print("clf:"+str(clf))
+
+oneRowx=dumx[0,:]
+newRowx=oneRowx
+newRowx[1]=1
+newRowx[2]=0
+
+predictedy=clf.predict([newRowx])      #这里与python2版本有较大差别
+print("zunzun:",str(predictedy))
